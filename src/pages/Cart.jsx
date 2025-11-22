@@ -134,7 +134,7 @@ const CartPage = () => {
     alert("Order placed successfully!");
 
     // Optionally redirect:
-    // window.location.href = "/orders";
+    window.location.href = "/orders";
     
   } catch (error) {
     console.error(

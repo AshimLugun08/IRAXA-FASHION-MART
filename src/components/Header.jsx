@@ -39,12 +39,14 @@ const Header = ({ cartCount = 0 }) => {
 
 
   const navItems = [
-    { name: "HOME", href: "/" },
-    { name: "SHOP", href: "/shop", hasDropdown: true },
-    { name: "NEW ARRIVALS", href: "/new-arrivals" },
-    { name: "INFLUENCER PICKS", href: "/influencer-picks" },
-    { name: "CONTACT US", href: "/contact" },
-  ];
+  { name: "HOME", href: "/" },
+  { name: "SHOP", href: "/shop", hasDropdown: true },
+  { name: "NEW ARRIVALS", href: "/new-arrivals" },
+  { name: "INFLUENCER PICKS", href: "/influencer-picks" },
+  { name: "ORDERS", href: "/orders" },   // ⭐ Added here
+  { name: "CONTACT US", href: "/contact" },
+];
+
 
   const handleAuthClick = () => {
     const token = localStorage.getItem("token");
