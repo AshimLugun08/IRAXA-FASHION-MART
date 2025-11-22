@@ -103,37 +103,49 @@ const CartPage = () => {
 
   // ---------------- PLACE ORDER ----------------
   const handlePlaceOrder = async () => {
-    if (!selectedAddress) {
-      alert("Please select a delivery address");
-      return;
-    }
+  if (!selectedAddress) {
+    alert("Please select a delivery address");
+    return;
+  }
 
-    try {
-      const orderData = {
-        products: cart.items.map((item) => ({
-          product: item.product._id,
-          quantity: item.quantity,
-          price: item.product.price,
-        })),
-        totalAmount: cart.items.reduce(
-          (sum, item) => sum + item.product.price * item.quantity,
-          0
-        ),
-        shippingAddress: selectedAddress._id,
-      };
+  try {
+    setPlacingOrder(true); // ⏳ Start loader
 
-      const res = await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/orders`,
-        orderData,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+    const orderData = {
+      products: cart.items.map((item) => ({
+        product: item.product._id,
+        quantity: item.quantity,
+        price: item.product.price,
+      })),
+      totalAmount: cart.items.reduce(
+        (sum, item) => sum + item.product.price * item.quantity,
+        0
+      ),
+      shippingAddress: selectedAddress._id,
+    };
 
-      alert("Order placed successfully!");
-    } catch (error) {
-      console.error("Order posting error:", error.response?.data || error.message);
-      alert("Failed to place order");
-    }
-  };
+    const res = await axios.post(
+      `${import.meta.env.VITE_BACKEND_URL}/orders`,
+      orderData,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    alert("Order placed successfully!");
+
+    // Optionally redirect:
+    // window.location.href = "/orders";
+    
+  } catch (error) {
+    console.error(
+      "Order posting error:",
+      error.response?.data || error.message
+    );
+    alert("Failed to place order");
+  } finally {
+    setPlacingOrder(false); // ⏹ Stop loader
+  }
+};
+
 
   // ---------------- LOADING ----------------
   if (loading) {
@@ -288,12 +300,22 @@ const CartPage = () => {
               <span>₹{total}</span>
             </div>
 
-            <button
-              onClick={handlePlaceOrder}
-              className="w-full bg-purple-600 text-white py-3 rounded-lg mt-4 hover:bg-purple-700"
-            >
-              Place Order
-            </button>
+           <button
+  onClick={handlePlaceOrder}
+  disabled={placingOrder}
+  className={`w-full py-3 rounded-lg mt-4 text-white 
+    ${placingOrder ? "bg-purple-400 cursor-not-allowed" : "bg-purple-600 hover:bg-purple-700"}`}
+>
+  {placingOrder ? (
+    <div className="flex items-center justify-center gap-3">
+      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+      Placing order...
+    </div>
+  ) : (
+    "Place Order"
+  )}
+</button>
+
           </div>
         </div>
       </div>
