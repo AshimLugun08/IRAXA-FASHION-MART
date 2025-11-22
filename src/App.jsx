@@ -172,29 +172,60 @@ const AppContent = () => {
   }, [handleLogout]);
 
   // ---------------- ADD TO CART (CENTRAL LOGIC) ----------------
-  const handleAddToCart = useCallback(
-    async (product) => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        openAuthModal();
-        throw new Error("Not logged in");
-      }
+  const handleAddToCart = useCallback(async (product) => {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    openAuthModal();
+    throw new Error("User not logged in");
+  }
 
-      await axios.post(`${API_BASE_URL}/cart`, {
+  try {
+    const res = await fetch(`${API_BASE_URL}/cart/add`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
         productId: product._id,
         quantity: 1,
-      });
+        priceAtTimeOfAddition: product.price,
+        size: "M",     // default size
+        color: "Red",  // default color
+        image:
+          product.image ||
+          product.images?.[0]?.url ||
+          product.images?.[0] ||
+          "",
+      }),
+    });
 
-      // 🔥 trigger cart reload in App
-      window.dispatchEvent(new Event("cartUpdated"));
+    const data = await res.json();
 
-      toast({
-        title: "Added to cart 🛒",
-        description: product.name,
-      });
-    },
-    [toast]
-  );
+    if (!res.ok) {
+      console.error("ADD TO CART ERROR:", data);
+      throw new Error(data.message || "Failed to add to cart");
+    }
+
+    console.log("ADD TO CART SUCCESS:", data);
+
+    // 🔥 Update cart everywhere
+    window.dispatchEvent(new Event("cartUpdated"));
+
+    toast({
+      title: "Added to Cart 🛒",
+      description: product.name,
+    });
+  } catch (err) {
+    console.error("ADD TO CART FAILED:", err);
+    toast({
+      title: "Error Adding to Cart",
+      description: err.message,
+      variant: "destructive",
+    });
+  }
+}, []);
+
 
   const commonProps = {
     cart,
