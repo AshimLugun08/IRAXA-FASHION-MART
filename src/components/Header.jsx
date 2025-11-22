@@ -14,23 +14,29 @@ const Header = ({ cartCount = 0 }) => {
 
   // 📌 Load user & update when login happens
   useEffect(() => {
-    function loadUser() {
-      const storedUser = localStorage.getItem("user");
-      if (storedUser) {
-        const parsedUser = JSON.parse(storedUser);
-        setUserName(parsedUser.name);
-      }
+  function updateUser() {
+    const storedUser = localStorage.getItem("user");
+
+    if (storedUser) {
+      const parsedUser = JSON.parse(storedUser);
+      setUserName(parsedUser.name);
+    } else {
+      setUserName(null); // 👈 logout case
     }
+  }
 
-    loadUser(); // Load first time
+  updateUser(); // Load on first render
 
-    // 🔥 Listen for login event
-    window.addEventListener("userLoggedIn", loadUser);
+  // Listen for login & logout
+  window.addEventListener("userLoggedIn", updateUser);
+  window.addEventListener("userLoggedOut", updateUser);
 
-    return () => {
-      window.removeEventListener("userLoggedIn", loadUser);
-    };
-  }, []);
+  return () => {
+    window.removeEventListener("userLoggedIn", updateUser);
+    window.removeEventListener("userLoggedOut", updateUser);
+  };
+}, []);
+
 
   const navItems = [
     { name: "HOME", href: "/" },

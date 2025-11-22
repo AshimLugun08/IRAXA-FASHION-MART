@@ -48,15 +48,23 @@ const AppContent = () => {
 
   // ---------------- LOGOUT ----------------
   const handleLogout = useCallback(() => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    setUser(null);
-    setCart([]);
-    toast({
-      title: "Logged out 👋",
-      description: "You have been successfully logged out.",
-    });
-  }, [toast]);
+  // Remove saved data
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+
+  // Update frontend states
+  setUser(null);
+  setCart([]);
+
+  // 🔥 Notify Header to remove first letter immediately
+  window.dispatchEvent(new Event("userLoggedOut"));
+
+  toast({
+    title: "Logged out 👋",
+    description: "You have been successfully logged out.",
+  });
+}, [toast]);
+
 
   // ---------------- FETCH LOGGED-IN USER ----------------
   const fetchUserProfile = useCallback(
