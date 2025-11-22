@@ -108,27 +108,32 @@ const Orders = ({ user }) => {
 
                 <div className="space-y-4">
                   {order.products.map((item, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center space-x-4"
-                    >
-                      <img
-  src={item.product.images?.[0]?.url || "/placeholder.jpg"}
-  alt={item.product.name}
-  className="w-16 h-16 object-cover rounded-md border"
-/>
+  <div key={index} className="flex items-center space-x-4">
 
-                      <div className="flex-1">
-                        <p className="font-medium text-gray-800">{item.product.name}</p>
-                        <p className="text-sm text-gray-500">
-                          Qty: **{item.quantity}** @ ₹{item.price.toFixed(2)}
-                        </p>
-                      </div>
-                      <p className="font-semibold text-gray-800">
-                        ₹{(item.quantity * item.price).toFixed(2)}
-                      </p>
-                    </div>
-                  ))}
+    <img
+      src={
+        item?.product?.images?.[0]?.url ||
+        item?.product?.images?.[0] ||
+        "/placeholder.jpg"
+      }
+      alt={item?.product?.name || "Product"}
+      className="w-16 h-16 object-cover rounded-md border"
+    />
+
+    <div className="flex-1">
+      <p className="font-medium text-gray-800">{item?.product?.name || "Product Removed"}</p>
+      <p className="text-sm text-gray-500">
+        Qty: {item.quantity} @ ₹{item.price.toFixed(2)}
+      </p>
+    </div>
+
+    <p className="font-semibold text-gray-800">
+      ₹{(item.quantity * item.price).toFixed(2)}
+    </p>
+
+  </div>
+))}
+
                 </div>
               </div>
             ))}
