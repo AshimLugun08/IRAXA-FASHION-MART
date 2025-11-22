@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Grid, List, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Link } from 'react-router';
@@ -30,8 +30,11 @@ const Shop = ({ onAddToCart }) => {
   const [sortBy, setSortBy] = useState('newest');
   const [viewMode, setViewMode] = useState('grid');
   const [showFilters, setShowFilters] = useState(false);
-
   const [priceRange, setPriceRange] = useState('all');
+
+  // NEW: Track which product is loading for Add-to-Cart
+  const [addingProductId, setAddingProductId] = useState(null);
+  const [addedSuccessId, setAddedSuccessId] = useState(null);
 
   // ---- FETCH PRODUCTS ----
   useEffect(() => {
@@ -57,6 +60,29 @@ const Shop = ({ onAddToCart }) => {
 
     fetchProducts();
   }, []);
+
+  // ---- HANDLE ADD TO CART ----
+  const handleAddToCart = async (e, product) => {
+    e.preventDefault();
+
+    setAddingProductId(product._id);
+
+    try {
+      await onAddToCart(product);
+
+      // Show Added ✓ success
+      setAddedSuccessId(product._id);
+
+      // 🔥 Real time update for Header/App
+      window.dispatchEvent(new Event("cartUpdated"));
+
+      setTimeout(() => setAddedSuccessId(null), 1200);
+    } catch (err) {
+      console.error("Add to cart failed:", err);
+    } finally {
+      setAddingProductId(null);
+    }
+  };
 
   // ---- FILTERING ----
   const filteredProducts = allProducts.filter((product) => {
@@ -91,12 +117,7 @@ const Shop = ({ onAddToCart }) => {
     }
   });
 
-  // ---- PRICE CHECKBOX ----
-  const handlePriceRangeChange = (value) => {
-    setPriceRange(value === priceRange ? 'all' : value);
-  };
-
-  // ---- LOADING ----
+  // ---- LOADING SCREEN ----
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -106,7 +127,7 @@ const Shop = ({ onAddToCart }) => {
     );
   }
 
-  // ---- ERROR ----
+  // ---- ERROR SCREEN ----
   if (error) {
     return (
       <div className="min-h-screen text-center py-20">
@@ -128,12 +149,12 @@ const Shop = ({ onAddToCart }) => {
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
 
-          {/* SIDEBAR FILTERS */}
+          {/* FILTER SIDEBAR */}
           <div className={`lg:w-1/4 ${showFilters ? 'block' : 'hidden lg:block'}`}>
             <div className="bg-white p-6 rounded-lg shadow-sm border">
               <h3 className="font-semibold text-lg mb-6">Filters</h3>
 
-              {/* SEARCH */}
+              {/* Search */}
               <div className="mb-6">
                 <label className="block mb-2 text-sm text-gray-600">Search</label>
                 <Input
@@ -143,7 +164,7 @@ const Shop = ({ onAddToCart }) => {
                 />
               </div>
 
-              {/* CATEGORY */}
+              {/* Category */}
               <div className="mb-6">
                 <label className="block mb-2 text-sm">Category</label>
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
@@ -161,7 +182,7 @@ const Shop = ({ onAddToCart }) => {
                 </Select>
               </div>
 
-              {/* PRICE RANGE */}
+              {/* Price Range */}
               <div className="mb-6">
                 <label className="block mb-2 text-sm">Price Range</label>
 
@@ -175,7 +196,9 @@ const Shop = ({ onAddToCart }) => {
                     <input
                       type="checkbox"
                       checked={priceRange === value}
-                      onChange={() => handlePriceRangeChange(value)}
+                      onChange={() =>
+                        setPriceRange(priceRange === value ? 'all' : value)
+                      }
                     />
                     <span>{label}</span>
                   </label>
@@ -184,10 +207,10 @@ const Shop = ({ onAddToCart }) => {
             </div>
           </div>
 
-          {/* PRODUCT LIST */}
+          {/* PRODUCT GRID */}
           <div className="lg:w-3/4">
 
-            {/* TOP BAR */}
+            {/* Top Bar */}
             <div className="flex justify-between mb-6">
               <p className="text-gray-600">
                 Showing {sortedProducts.length} of {allProducts.length} products
@@ -206,7 +229,7 @@ const Shop = ({ onAddToCart }) => {
               </Select>
             </div>
 
-            {/* PRODUCTS GRID */}
+            {/* PRODUCT LIST */}
             <div
               className={
                 viewMode === 'grid'
@@ -221,6 +244,7 @@ const Shop = ({ onAddToCart }) => {
                   <Link to={`/product/${product._id}`} key={product._id}>
                     <div className="group bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-all">
 
+                      {/* Product Image */}
                       <div className="relative overflow-hidden aspect-[3/4]">
                         <img
                           src={image}
@@ -228,24 +252,31 @@ const Shop = ({ onAddToCart }) => {
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform"
                         />
 
-                        {/* Add To Cart Button */}
+                        {/* ADD TO CART BUTTON */}
                         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition">
                           <Button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              onAddToCart(product);
-                            }}
+                            onClick={(e) => handleAddToCart(e, product)}
+                            disabled={addingProductId === product._id}
+                            className="w-32"
                           >
-                            Add to Cart
+                            {addingProductId === product._id ? (
+                              <Loader2 className="animate-spin h-4 w-4" />
+                            ) : addedSuccessId === product._id ? (
+                              "Added ✓"
+                            ) : (
+                              "Add to Cart"
+                            )}
                           </Button>
                         </div>
                       </div>
 
+                      {/* Product Details */}
                       <div className="p-3">
                         <p className="text-xs text-gray-500">{product.category}</p>
                         <h3 className="font-medium line-clamp-2">{product.name}</h3>
                         <p className="font-semibold">Rs. {product.price.toLocaleString()}</p>
                       </div>
+
                     </div>
                   </Link>
                 );
