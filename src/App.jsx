@@ -7,7 +7,6 @@ import {
   Routes,
   Route,
   Navigate,
-  useLocation,
   useNavigate,
 } from "react-router-dom";
 
@@ -32,7 +31,7 @@ import CartPage from "./pages/Cart";
 import ProductDetails from "./pages/ProductDetails";
 import AuthCallback from "./pages/AuthCallback";
 
-const API_BASE_URL =`${import.meta.env.VITE_BACKEND_URL}`; ;
+const API_BASE_URL = `${import.meta.env.VITE_BACKEND_URL}`;
 
 const AppContent = () => {
   const navigate = useNavigate();
@@ -48,25 +47,22 @@ const AppContent = () => {
 
   // ---------------- LOGOUT ----------------
   const handleLogout = useCallback(() => {
-  // Remove saved data
-  localStorage.removeItem("token");
-  localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
 
-  // Update frontend states
-  setUser(null);
-  setCart([]);
+    setUser(null);
+    setCart([]);
 
-  // 🔥 Notify Header to remove first letter immediately
-  window.dispatchEvent(new Event("userLoggedOut"));
+    // 🔥 Notify Header + App instantly
+    window.dispatchEvent(new Event("userLoggedOut"));
 
-  toast({
-    title: "Logged out 👋",
-    description: "You have been successfully logged out.",
-  });
-}, [toast]);
+    toast({
+      title: "Logged out 👋",
+      description: "You have been successfully logged out.",
+    });
+  }, [toast]);
 
-
-  // ---------------- FETCH LOGGED-IN USER ----------------
+  // ---------------- FETCH USER PROFILE ----------------
   const fetchUserProfile = useCallback(
     async (token) => {
       try {
@@ -75,12 +71,13 @@ const AppContent = () => {
         });
 
         const realUser = response.data.user;
-        setUser(realUser);
+
+        setUser(realUser); // update state
         localStorage.setItem("user", JSON.stringify(realUser));
 
         toast({
           title: "Welcome 🎉",
-          description: realUser.name || realUser.email,
+          description: realUser.name,
         });
       } catch (error) {
         console.error("Failed to fetch profile:", error);
@@ -90,24 +87,44 @@ const AppContent = () => {
     [handleLogout, toast]
   );
 
-  // ---------------- RESTORE USER ON PAGE REFRESH ----------------
- useEffect(() => {
-  const token = localStorage.getItem("token");
-  const storedUser = localStorage.getItem("user");
-  // console.log("Auth Restore Effect RUNNING",{user});
+  // ---------------- RESTORE USER ON REFRESH ----------------
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const storedUser = localStorage.getItem("user");
 
-  console.log("Restoring user:", storedUser, "Token:", token);
+    console.log("Restoring user:", storedUser, "Token:", token);
 
-  if (token && storedUser) {
-    setUser(JSON.parse(storedUser));  // ✔ Restore actual user object
-    fetchUserProfile(token);          // ✔ Verify token
-  }
+    if (token && storedUser) {
+      setUser(JSON.parse(storedUser));
+      fetchUserProfile(token);
+    }
 
-  setLoadingUser(false);
-}, [fetchUserProfile]);
+    setLoadingUser(false);
+  }, [fetchUserProfile]);
 
+  // ---------------- LISTEN FOR LOGIN / LOGOUT EVENTS ----------------
+  useEffect(() => {
+    function updateUser() {
+      const storedUser = localStorage.getItem("user");
 
-  // ---------------- AXIOS AUTH HEADER ----------------
+      if (storedUser) {
+        const parsed = JSON.parse(storedUser);
+        setUser(parsed); // 🔥 update immediately after login
+      } else {
+        setUser(null); // logout case
+      }
+    }
+
+    window.addEventListener("userLoggedIn", updateUser);
+    window.addEventListener("userLoggedOut", updateUser);
+
+    return () => {
+      window.removeEventListener("userLoggedIn", updateUser);
+      window.removeEventListener("userLoggedOut", updateUser);
+    };
+  }, []);
+
+  // ---------------- AXIOS INTERCEPTORS ----------------
   useEffect(() => {
     const req = axios.interceptors.request.use((config) => {
       const token = localStorage.getItem("token");
@@ -131,7 +148,7 @@ const AppContent = () => {
     };
   }, [handleLogout]);
 
-  // ---------------- LOAD CART WHEN USER LOGS IN ----------------
+  // ---------------- LOAD CART WHEN USER CHANGES ----------------
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token && user) {
@@ -142,24 +159,14 @@ const AppContent = () => {
     }
   }, [user]);
 
-  // ---------------- PLACEHOLDER ACTIONS ----------------
-  const addToCart = (product) => console.log("Added:", product);
-  const toggleWishlist = (id) => console.log("Wishlist:", id);
-  const handleCartClick = () => console.log("Cart Clicked");
-
-  // ---------------- COMMON PROPS ----------------
   const commonProps = {
     cart,
     wishlist,
-    onAddToCart: addToCart,
-    onToggleWishlist: toggleWishlist,
-    onCartClick: handleCartClick,
-    user,
     onLogout: handleLogout,
+    user,
     onRequireAuth: openAuthModal,
   };
 
-  // ---------------- LOADING ----------------
   if (loadingUser) {
     return (
       <div className="flex items-center justify-center h-screen text-gray-700">
@@ -172,7 +179,6 @@ const AppContent = () => {
     <div className="min-h-screen bg-white">
       <Header
         cartCount={cart.reduce((sum, item) => sum + item.quantity, 0)}
-        onCartClick={handleCartClick}
         user={user}
         onLogout={handleLogout}
         isAuthModalOpen={isAuthModalOpen}
@@ -188,7 +194,6 @@ const AppContent = () => {
           <Route path="/contact" element={<Contact />} />
           <Route path="/cart" element={<CartPage {...commonProps} />} />
 
-          {/* Google OAuth Callback */}
           <Route path="/auth-callback" element={<AuthCallback />} />
 
           <Route
@@ -196,7 +201,6 @@ const AppContent = () => {
             element={<ProductDetails onRequireAuth={openAuthModal} />}
           />
 
-          {/* Protected */}
           <Route
             path="/profile"
             element={user ? <Profile {...commonProps} /> : <Navigate to="/" />}
@@ -216,15 +220,12 @@ const AppContent = () => {
   );
 };
 
-// ---------------- MAIN APP ----------------
 function App() {
   return (
-    <div className="App">
-      <BrowserRouter>
-        <AppContent />
-      </BrowserRouter>
+    <BrowserRouter>
+      <AppContent />
       <Toaster />
-    </div>
+    </BrowserRouter>
   );
 }
 
