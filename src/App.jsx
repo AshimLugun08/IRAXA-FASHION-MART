@@ -86,6 +86,7 @@ const AppContent = () => {
  useEffect(() => {
   const token = localStorage.getItem("token");
   const storedUser = localStorage.getItem("user");
+  // console.log("Auth Restore Effect RUNNING",{user});
 
   console.log("Restoring user:", storedUser, "Token:", token);
 

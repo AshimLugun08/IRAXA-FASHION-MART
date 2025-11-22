@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, User, ShoppingBag, Menu, X } from 'lucide-react';
 import { Button } from './ui/button';
@@ -8,7 +8,32 @@ const Header = ({ cartCount = 0 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [userName, setUserName] = useState(null);
+
   const navigate = useNavigate();
+
+  // Load user name from localStorage
+ useEffect(() => {
+  console.log("HEADER useEffect RUNNING");
+
+  const storedUser = localStorage.getItem("user");
+  console.log("RAW localStorage user:", storedUser);
+
+  if (!storedUser) {
+    console.log("❌ No user in localStorage");
+    return;
+  }
+
+  try {
+    const parsedUser = JSON.parse(storedUser);
+    console.log("Parsed User:", parsedUser);
+    setUserName(parsedUser.name);
+  } catch (error) {
+    console.log("❌ JSON parse error:", error);
+  }
+}, []);
+
+
 
   const navItems = [
     { name: 'HOME', href: '/' },
@@ -18,10 +43,9 @@ const Header = ({ cartCount = 0 }) => {
     { name: 'CONTACT US', href: '/contact' },
   ];
 
-  // ✅ Handle user button click
   const handleAuthClick = () => {
     const token = localStorage.getItem('token');
-    console.log('Auth click, token:', token);
+
     if (token) {
       navigate('/profile');
     } else {
@@ -30,14 +54,13 @@ const Header = ({ cartCount = 0 }) => {
     }
   };
 
-  // ✅ Auth Modal Component
   const AuthModal = () => (
     <div
-      className="fixed inset-0 z-[100] bg-black bg-opacity-50 flex items-center justify-center transition-opacity duration-300"
+      className="fixed inset-0 z-[100] bg-black bg-opacity-50 flex items-center justify-center"
       onClick={() => setIsAuthModalOpen(false)}
     >
       <div
-        className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-sm m-4 transform transition-all duration-300 scale-100"
+        className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-sm m-4"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-start mb-6">
@@ -52,19 +75,15 @@ const Header = ({ cartCount = 0 }) => {
         </p>
 
         <Button
-  onClick={() => {
-    const backend = import.meta.env.VITE_BACKEND_URL ;
-
-    console.log("BACKEND URL USED:", backend);
-    window.location.href = backend.replace(/\/$/, "") + "/auth/google";
-
-    setIsAuthModalOpen(false);
-  }}
-  className="w-full py-2.5 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 flex items-center justify-center space-x-3 transition-colors shadow-sm"
->
-  <span className="font-medium text-base">Sign in with Google</span>
-</Button>
-
+          onClick={() => {
+            const backend = import.meta.env.VITE_BACKEND_URL;
+            window.location.href = backend.replace(/\/$/, "") + "/auth/google";
+            setIsAuthModalOpen(false);
+          }}
+          className="w-full py-2.5 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 flex items-center justify-center space-x-3 shadow-sm"
+        >
+          <span className="font-medium text-base">Sign in with Google</span>
+        </Button>
       </div>
     </div>
   );
@@ -75,23 +94,20 @@ const Header = ({ cartCount = 0 }) => {
       <div className="bg-gradient-to-r from-purple-400 to-pink-400 text-white py-2 overflow-hidden">
         <div className="animate-scroll whitespace-nowrap flex">
           <span className="mx-8 text-sm font-medium">📦 Free shipping on all orders</span>
-          <span className="mx-8 text-sm font-medium">🎉 5% OFF on all Prepaid orders, Use code: PREPAID5 Shop now!</span>
+          <span className="mx-8 text-sm font-medium">🎉 5% OFF on all Prepaid orders, Use code: PREPAID5</span>
           <span className="mx-8 text-sm font-medium">📦 Free shipping on all orders</span>
-          <span className="mx-8 text-sm font-medium">🎉 5% OFF on all Prepaid orders, Use code: PREPAID5 Shop now!</span>
         </div>
       </div>
 
       {/* Main Header */}
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20">
-          {/* Mobile Menu & Search */}
-          <div className="flex items-center md:hidden space-x-2">
+
+          {/* Left Mobile Menu Button */}
+          <div className="flex items-center md:hidden">
             <button className="p-2" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
               {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
-            {/* <button className="p-2" onClick={() => setIsSearchOpen(!isSearchOpen)}>
-              <Search size={20} />
-            </button> */}
           </div>
 
           {/* Logo */}
@@ -99,6 +115,33 @@ const Header = ({ cartCount = 0 }) => {
             <Link to="/" className="text-center">
               <div className="text-purple-600 text-2xl font-serif mb-1">IFM</div>
               <div className="text-xs font-medium tracking-wider text-gray-600">IRAXA FASHION MART</div>
+            </Link>
+          </div>
+
+          {/* RIGHT SIDE ICONS FOR MOBILE */}
+          <div className="flex items-center space-x-3 md:hidden">
+            {/* USER LOGIN / PROFILE */}
+            <button onClick={handleAuthClick} className="relative">
+
+              {userName ? (
+                // First letter bubble
+                <div className="h-8 w-8 flex items-center justify-center rounded-full bg-purple-600 text-white font-bold">
+                  {userName.charAt(0).toUpperCase()}
+                </div>
+              ) : (
+                <User size={22} className="text-gray-700" />
+              )}
+
+            </button>
+
+            {/* Cart Icon */}
+            <Link to="/cart" className="relative">
+              <ShoppingBag size={22} className="text-gray-700" />
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-purple-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  {cartCount}
+                </span>
+              )}
             </Link>
           </div>
 
@@ -115,15 +158,16 @@ const Header = ({ cartCount = 0 }) => {
             ))}
           </nav>
 
-          {/* Desktop Icons */}
+          {/* Desktop Right Icons */}
           <div className="hidden md:flex items-center space-x-4">
-            {/* <button className="p-2 hover:text-purple-600 transition-colors" onClick={() => setIsSearchOpen(true)}>
-              <Search size={20} />
-            </button> */}
-
-            {/* ✅ User Button (with login/profile functionality) */}
             <button className="p-2 hover:text-purple-600 transition-colors" onClick={handleAuthClick}>
-              <User size={20} />
+              {userName ? (
+                <div className="h-8 w-8 flex items-center justify-center rounded-full bg-purple-600 text-white font-bold">
+                  {userName.charAt(0).toUpperCase()}
+                </div>
+              ) : (
+                <User size={20} />
+              )}
             </button>
 
             <Link to="/cart" className="p-2 hover:text-purple-600 transition-colors relative">
@@ -136,13 +180,6 @@ const Header = ({ cartCount = 0 }) => {
             </Link>
           </div>
         </div>
-
-        {/* Mobile Search */}
-        {isSearchOpen && (
-          <div className="md:hidden pb-4">
-            <Input type="text" placeholder="Search for products..." className="w-full" />
-          </div>
-        )}
       </div>
 
       {/* Mobile Menu */}
@@ -153,7 +190,7 @@ const Header = ({ cartCount = 0 }) => {
               <Link
                 key={item.name}
                 to={item.href}
-                className="block py-3 text-sm font-medium text-gray-700 hover:text-purple-600 transition-colors"
+                className="block py-3 text-sm font-medium text-gray-700 hover:text-purple-600"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 {item.name}
@@ -163,7 +200,6 @@ const Header = ({ cartCount = 0 }) => {
         </div>
       )}
 
-      {/* Auth Modal */}
       {isAuthModalOpen && <AuthModal />}
     </header>
   );
