@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { Link } from 'react-router';
+import { Link } from 'react-router-dom'; // ✅ FIXED
 import { 
   Select, 
   SelectContent, 
@@ -20,7 +20,7 @@ const MOCK_CATEGORIES = [
   { id: 4, name: 'Collections' },
 ];
 
-const Shop = ({ onAddToCart }) => {
+const Shop = ({ onAddToCart = async () => {} }) => {  // ✅ safe default
   const [allProducts, setAllProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -32,7 +32,7 @@ const Shop = ({ onAddToCart }) => {
   const [showFilters, setShowFilters] = useState(false);
   const [priceRange, setPriceRange] = useState('all');
 
-  // NEW: Track which product is loading for Add-to-Cart
+  // Track which product is loading for Add-to-Cart
   const [addingProductId, setAddingProductId] = useState(null);
   const [addedSuccessId, setAddedSuccessId] = useState(null);
 
@@ -68,14 +68,9 @@ const Shop = ({ onAddToCart }) => {
     setAddingProductId(product._id);
 
     try {
-      await onAddToCart(product);
+      await onAddToCart(product);  // ✅ real logic handled in App
 
-      // Show Added ✓ success
       setAddedSuccessId(product._id);
-
-      // 🔥 Real time update for Header/App
-      window.dispatchEvent(new Event("cartUpdated"));
-
       setTimeout(() => setAddedSuccessId(null), 1200);
     } catch (err) {
       console.error("Add to cart failed:", err);

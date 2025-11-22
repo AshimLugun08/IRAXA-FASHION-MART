@@ -31,6 +31,10 @@ import CartPage from "./pages/Cart";
 import ProductDetails from "./pages/ProductDetails";
 import AuthCallback from "./pages/AuthCallback";
 
+// src/App.js
+
+// ...your imports stay the same...
+
 const API_BASE_URL = `${import.meta.env.VITE_BACKEND_URL}`;
 
 const AppContent = () => {
@@ -53,7 +57,6 @@ const AppContent = () => {
     setUser(null);
     setCart([]);
 
-    // 🔥 Notify global listeners
     window.dispatchEvent(new Event("userLoggedOut"));
 
     toast({
@@ -91,8 +94,6 @@ const AppContent = () => {
     const token = localStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
 
-    console.log("Restoring user:", storedUser, "Token:", token);
-
     if (token && storedUser) {
       setUser(JSON.parse(storedUser));
       fetchUserProfile(token);
@@ -105,11 +106,8 @@ const AppContent = () => {
   useEffect(() => {
     function updateUser() {
       const stored = localStorage.getItem("user");
-      if (stored) {
-        setUser(JSON.parse(stored)); // login
-      } else {
-        setUser(null); // logout
-      }
+      if (stored) setUser(JSON.parse(stored));
+      else setUser(null);
     }
 
     window.addEventListener("userLoggedIn", updateUser);
@@ -173,12 +171,38 @@ const AppContent = () => {
     };
   }, [handleLogout]);
 
+  // ---------------- ADD TO CART (CENTRAL LOGIC) ----------------
+  const handleAddToCart = useCallback(
+    async (product) => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        openAuthModal();
+        throw new Error("Not logged in");
+      }
+
+      await axios.post(`${API_BASE_URL}/cart`, {
+        productId: product._id,
+        quantity: 1,
+      });
+
+      // 🔥 trigger cart reload in App
+      window.dispatchEvent(new Event("cartUpdated"));
+
+      toast({
+        title: "Added to cart 🛒",
+        description: product.name,
+      });
+    },
+    [toast]
+  );
+
   const commonProps = {
     cart,
     wishlist,
     user,
     onLogout: handleLogout,
     onRequireAuth: openAuthModal,
+    onAddToCart: handleAddToCart,   // ✅ pass here
   };
 
   if (loadingUser) {
