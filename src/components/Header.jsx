@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Search, User, ShoppingBag, Menu, X } from 'lucide-react';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { User, ShoppingBag, Menu, X } from "lucide-react";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
 
 const Header = ({ cartCount = 0 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -12,42 +12,39 @@ const Header = ({ cartCount = 0 }) => {
 
   const navigate = useNavigate();
 
-  // Load user name from localStorage
- useEffect(() => {
-  console.log("HEADER useEffect RUNNING");
+  // 📌 Load user & update when login happens
+  useEffect(() => {
+    function loadUser() {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        setUserName(parsedUser.name);
+      }
+    }
 
-  const storedUser = localStorage.getItem("user");
-  console.log("RAW localStorage user:", storedUser);
+    loadUser(); // Load first time
 
-  if (!storedUser) {
-    console.log("❌ No user in localStorage");
-    return;
-  }
+    // 🔥 Listen for login event
+    window.addEventListener("userLoggedIn", loadUser);
 
-  try {
-    const parsedUser = JSON.parse(storedUser);
-    console.log("Parsed User:", parsedUser);
-    setUserName(parsedUser.name);
-  } catch (error) {
-    console.log("❌ JSON parse error:", error);
-  }
-}, []);
-
-
+    return () => {
+      window.removeEventListener("userLoggedIn", loadUser);
+    };
+  }, []);
 
   const navItems = [
-    { name: 'HOME', href: '/' },
-    { name: 'SHOP', href: '/shop', hasDropdown: true },
-    { name: 'NEW ARRIVALS', href: '/new-arrivals' },
-    { name: 'INFLUENCER PICKS', href: '/influencer-picks' },
-    { name: 'CONTACT US', href: '/contact' },
+    { name: "HOME", href: "/" },
+    { name: "SHOP", href: "/shop", hasDropdown: true },
+    { name: "NEW ARRIVALS", href: "/new-arrivals" },
+    { name: "INFLUENCER PICKS", href: "/influencer-picks" },
+    { name: "CONTACT US", href: "/contact" },
   ];
 
   const handleAuthClick = () => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
 
     if (token) {
-      navigate('/profile');
+      navigate("/profile");
     } else {
       setIsAuthModalOpen(true);
       setIsMobileMenuOpen(false);
@@ -65,7 +62,10 @@ const Header = ({ cartCount = 0 }) => {
       >
         <div className="flex justify-between items-start mb-6">
           <h2 className="text-2xl font-bold text-gray-800">Sign Up / Log In</h2>
-          <button onClick={() => setIsAuthModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+          <button
+            onClick={() => setIsAuthModalOpen(false)}
+            className="text-gray-400 hover:text-gray-600"
+          >
             <X size={24} />
           </button>
         </div>
@@ -77,10 +77,11 @@ const Header = ({ cartCount = 0 }) => {
         <Button
           onClick={() => {
             const backend = import.meta.env.VITE_BACKEND_URL;
-            window.location.href = backend.replace(/\/$/, "") + "/auth/google";
+            window.location.href =
+              backend.replace(/\/$/, "") + "/auth/google";
             setIsAuthModalOpen(false);
           }}
-          className="w-full py-2.5 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 flex items-center justify-center space-x-3 shadow-sm"
+          className="w-full py-2.5 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
         >
           <span className="font-medium text-base">Sign in with Google</span>
         </Button>
@@ -102,10 +103,12 @@ const Header = ({ cartCount = 0 }) => {
       {/* Main Header */}
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20">
-
-          {/* Left Mobile Menu Button */}
+          {/* Mobile Menu */}
           <div className="flex items-center md:hidden">
-            <button className="p-2" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+            <button
+              className="p-2"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            >
               {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
           </div>
@@ -113,28 +116,29 @@ const Header = ({ cartCount = 0 }) => {
           {/* Logo */}
           <div className="flex-1 md:flex-none flex justify-center md:justify-start">
             <Link to="/" className="text-center">
-              <div className="text-purple-600 text-2xl font-serif mb-1">IFM</div>
-              <div className="text-xs font-medium tracking-wider text-gray-600">IRAXA FASHION MART</div>
+              <div className="text-purple-600 text-2xl font-serif mb-1">
+                IFM
+              </div>
+              <div className="text-xs font-medium tracking-wider text-gray-600">
+                IRAXA FASHION MART
+              </div>
             </Link>
           </div>
 
-          {/* RIGHT SIDE ICONS FOR MOBILE */}
+          {/* Mobile Icons */}
           <div className="flex items-center space-x-3 md:hidden">
-            {/* USER LOGIN / PROFILE */}
-            <button onClick={handleAuthClick} className="relative">
-
+            {/* User Icon */}
+            <button onClick={handleAuthClick}>
               {userName ? (
-                // First letter bubble
                 <div className="h-8 w-8 flex items-center justify-center rounded-full bg-purple-600 text-white font-bold">
                   {userName.charAt(0).toUpperCase()}
                 </div>
               ) : (
                 <User size={22} className="text-gray-700" />
               )}
-
             </button>
 
-            {/* Cart Icon */}
+            {/* Cart */}
             <Link to="/cart" className="relative">
               <ShoppingBag size={22} className="text-gray-700" />
               {cartCount > 0 && (
@@ -145,22 +149,22 @@ const Header = ({ cartCount = 0 }) => {
             </Link>
           </div>
 
-          {/* Desktop Navigation */}
+          {/* Desktop Nav */}
           <nav className="hidden md:flex items-center space-x-8 flex-1 justify-center">
             {navItems.map((item) => (
               <Link
                 key={item.name}
                 to={item.href}
-                className="text-sm font-medium text-gray-700 hover:text-purple-600 transition-colors"
+                className="text-sm font-medium text-gray-700 hover:text-purple-600"
               >
                 {item.name}
               </Link>
             ))}
           </nav>
 
-          {/* Desktop Right Icons */}
+          {/* Desktop Icons */}
           <div className="hidden md:flex items-center space-x-4">
-            <button className="p-2 hover:text-purple-600 transition-colors" onClick={handleAuthClick}>
+            <button className="p-2" onClick={handleAuthClick}>
               {userName ? (
                 <div className="h-8 w-8 flex items-center justify-center rounded-full bg-purple-600 text-white font-bold">
                   {userName.charAt(0).toUpperCase()}
@@ -170,7 +174,7 @@ const Header = ({ cartCount = 0 }) => {
               )}
             </button>
 
-            <Link to="/cart" className="p-2 hover:text-purple-600 transition-colors relative">
+            <Link to="/cart" className="p-2 relative">
               <ShoppingBag size={20} />
               {cartCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-purple-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
@@ -190,7 +194,7 @@ const Header = ({ cartCount = 0 }) => {
               <Link
                 key={item.name}
                 to={item.href}
-                className="block py-3 text-sm font-medium text-gray-700 hover:text-purple-600"
+                className="block py-3 text-sm font-medium text-gray-700"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 {item.name}
