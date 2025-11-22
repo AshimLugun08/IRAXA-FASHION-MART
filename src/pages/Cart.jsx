@@ -12,6 +12,7 @@ const CartPage = () => {
   const [addresses, setAddresses] = useState([]);
   const [loadingAddresses, setLoadingAddresses] = useState(true);
   const [selectedAddress, setSelectedAddress] = useState(null);
+   const [placingOrder, setPlacingOrder] = useState(false);
 
   // ---------------- FETCH CART ----------------
   const fetchCart = async () => {
