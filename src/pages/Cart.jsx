@@ -103,49 +103,68 @@ const CartPage = () => {
   };
 
   // ---------------- PLACE ORDER ----------------
-  const handlePlaceOrder = async () => {
+ const handlePlaceOrder = async () => {
   if (!selectedAddress) {
     alert("Please select a delivery address");
     return;
   }
 
+  setPlacingOrder(true);
+
   try {
-    setPlacingOrder(true); // ⏳ Start loader
+    const amount = subtotal + shipping;
 
-    const orderData = {
-      products: cart.items.map((item) => ({
-        product: item.product._id,
-        quantity: item.quantity,
-        price: item.product.price,
-      })),
-      totalAmount: cart.items.reduce(
-        (sum, item) => sum + item.product.price * item.quantity,
-        0
-      ),
-      shippingAddress: selectedAddress._id,
-    };
-
-    const res = await axios.post(
-      `${import.meta.env.VITE_BACKEND_URL}/orders`,
-      orderData,
+    // 1️⃣ Create Razorpay order on backend
+    const { data } = await axios.post(
+      `${import.meta.env.VITE_BACKEND_URL}/payment/create-order`,
+      { amount },
       { headers: { Authorization: `Bearer ${token}` } }
     );
 
-    alert("Order placed successfully!");
+    const options = {
+      key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+      amount: data.amount,
+      currency: "INR",
+      order_id: data.orderId,
+      name: "IRAXA FASHION MART",
+      description: "Order Payment",
 
-    // Optionally redirect:
-    // window.location.href = "/orders";
-    
-  } catch (error) {
-    console.error(
-      "Order posting error:",
-      error.response?.data || error.message
-    );
-    alert("Failed to place order");
+      handler: async function (response) {
+        // 2️⃣ Verify payment on backend
+        await axios.post(
+          `${import.meta.env.VITE_BACKEND_URL}/payment/verify`,
+          {
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature,
+            cart,
+            addressId: selectedAddress._id,
+          },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        alert("Payment Successful! Order placed.");
+        window.location.href = "/orders";
+      },
+
+      prefill: {
+        name: selectedAddress.fullName,
+        contact: selectedAddress.phone,
+      },
+
+      theme: { color: "#8b5cf6" },
+    };
+
+    const rzp = new window.Razorpay(options);
+    rzp.open();
+  } catch (err) {
+    console.error("Payment error:", err);
+    alert("Payment failed");
   } finally {
-    setPlacingOrder(false); // ⏹ Stop loader
+    setPlacingOrder(false);
   }
 };
+
 
 
   // ---------------- LOADING ----------------
