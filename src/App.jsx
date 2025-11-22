@@ -53,7 +53,7 @@ const AppContent = () => {
     setUser(null);
     setCart([]);
 
-    // 🔥 Notify Header + App instantly
+    // 🔥 Notify global listeners
     window.dispatchEvent(new Event("userLoggedOut"));
 
     toast({
@@ -71,8 +71,7 @@ const AppContent = () => {
         });
 
         const realUser = response.data.user;
-
-        setUser(realUser); // update state
+        setUser(realUser);
         localStorage.setItem("user", JSON.stringify(realUser));
 
         toast({
@@ -102,16 +101,14 @@ const AppContent = () => {
     setLoadingUser(false);
   }, [fetchUserProfile]);
 
-  // ---------------- LISTEN FOR LOGIN / LOGOUT EVENTS ----------------
+  // ---------------- LISTEN FOR LOGIN / LOGOUT ----------------
   useEffect(() => {
     function updateUser() {
-      const storedUser = localStorage.getItem("user");
-
-      if (storedUser) {
-        const parsed = JSON.parse(storedUser);
-        setUser(parsed); // 🔥 update immediately after login
+      const stored = localStorage.getItem("user");
+      if (stored) {
+        setUser(JSON.parse(stored)); // login
       } else {
-        setUser(null); // logout case
+        setUser(null); // logout
       }
     }
 
@@ -123,6 +120,34 @@ const AppContent = () => {
       window.removeEventListener("userLoggedOut", updateUser);
     };
   }, []);
+
+  // ---------------- REAL-TIME CART LISTENER ----------------
+  useEffect(() => {
+    function refreshCart() {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      axios
+        .get(`${API_BASE_URL}/cart`)
+        .then((res) => setCart(res.data.items || []))
+        .catch(() => {});
+    }
+
+    window.addEventListener("cartUpdated", refreshCart);
+
+    return () => window.removeEventListener("cartUpdated", refreshCart);
+  }, []);
+
+  // ---------------- LOAD CART WHEN USER CHANGES ----------------
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token && user) {
+      axios
+        .get(`${API_BASE_URL}/cart`)
+        .then((res) => setCart(res.data.items || []))
+        .catch(() => {});
+    }
+  }, [user]);
 
   // ---------------- AXIOS INTERCEPTORS ----------------
   useEffect(() => {
@@ -148,22 +173,11 @@ const AppContent = () => {
     };
   }, [handleLogout]);
 
-  // ---------------- LOAD CART WHEN USER CHANGES ----------------
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token && user) {
-      axios
-        .get(`${API_BASE_URL}/cart`)
-        .then((res) => setCart(res.data.items || []))
-        .catch(() => {});
-    }
-  }, [user]);
-
   const commonProps = {
     cart,
     wishlist,
-    onLogout: handleLogout,
     user,
+    onLogout: handleLogout,
     onRequireAuth: openAuthModal,
   };
 
