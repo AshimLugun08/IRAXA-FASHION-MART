@@ -43,9 +43,9 @@ const Footer = () => {
           <div>
             <div className='mb-6'>
               <img
-                src='/logo.png'
+                src='./src/assets/logo-removebg-preview.png'
                 alt='IRAXA FASHION MART'
-                className='h-12 mb-2'
+                className='w-24 h-auto mb-2'
               />
               <p className='text-gray-400 text-sm'>
                 Timeless elegance, artisanal craftsmanship, and bespoke designs.

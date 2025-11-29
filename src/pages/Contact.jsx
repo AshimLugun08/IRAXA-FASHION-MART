@@ -306,7 +306,7 @@ const Contact = () => {
               {
                 question: 'What is your return policy?',
                 answer:
-                  'We offer a 30-day return policy for all unworn items with tags attached. Custom-made pieces are non-returnable unless defective.',
+                  'If you have any questions regarding your purchase / orders returning issue, our support team will be happy to help.',
               },
               {
                 question: 'How long does shipping take?',
