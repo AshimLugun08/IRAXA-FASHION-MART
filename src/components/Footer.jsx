@@ -1,4 +1,5 @@
 import React from 'react';
+import { useState } from 'react';
 import {
   Facebook,
   Instagram,
@@ -10,11 +11,62 @@ import {
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 
+const GOOGLE_SHEET_WEBHOOK =
+  'https://script.google.com/macros/s/AKfycbya9eLvJRhnFvuvDJJUIfzQmCsdFE8ZnQZQRUTbUhVvB3U8Ic9p0g0l3cr1uM_BftmE-w/exec';
 const Footer = () => {
+  // 📌 Handle Newsletter Subscription
+
+  const [email, setEmail] = useState('');
+  const [status, setStatus] = useState('');
+
+  const handleSubscribe = async (e) => {
+    e.preventDefault(); // ✅ 100% redirect band
+
+    const trimmed = email.trim().toLowerCase();
+
+    if (!trimmed) {
+      setStatus('Please enter a valid email address.');
+      return;
+    }
+
+    // ✅ Local duplicate check (browser level)
+    const stored = JSON.parse(localStorage.getItem('subscribedEmails') || '[]');
+
+    if (stored.includes(trimmed)) {
+      setStatus('You are already subscribed.');
+      return;
+    }
+
+    try {
+      // ✅ Fire-and-forget POST (NO redirect, NO CORS issue)
+      const body = new URLSearchParams({ email: trimmed });
+
+      await fetch(GOOGLE_SHEET_WEBHOOK, {
+        method: 'POST',
+        mode: 'no-cors', // 🔥 YAHI REDIRECT + CORS dono ka final solution hai
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body,
+      });
+
+      // ✅ UI success
+      stored.push(trimmed);
+      localStorage.setItem('subscribedEmails', JSON.stringify(stored));
+
+      setStatus('Thank you for subscribing!');
+      setEmail('');
+    } catch (err) {
+      setStatus('Something went wrong. Please try again.');
+    }
+  };
+
+  //
+
   return (
     <footer className='bg-gray-900 text-white'>
       {/* Newsletter Section */}
-      <div className='border-b border-gray-800'>
+      {/* <div className='border-b border-gray-800'>
         <div className='container mx-auto px-4 py-12'>
           <div className='max-w-2xl mx-auto text-center'>
             <h3 className='text-2xl font-serif mb-4'>Stay in the Loop</h3>
@@ -32,6 +84,45 @@ const Footer = () => {
                 Subscribe
               </Button>
             </div>
+          </div>
+        </div>
+      </div> */}
+
+      {/* Newsletter Section */}
+      <div className='border-b border-gray-800'>
+        <div className='container mx-auto px-4 py-12'>
+          <div className='max-w-2xl mx-auto text-center'>
+            <h3 className='text-2xl font-serif mb-4'>Stay in the Loop</h3>
+            <p className='text-gray-400 mb-6'>
+              Subscribe to receive updates on new arrivals, special offers, and
+              styling tips.
+            </p>
+
+            <form
+              action={GOOGLE_SHEET_WEBHOOK}
+              method='POST'
+              target='hidden_iframe'
+              onSubmit={handleSubscribe}
+              className='flex flex-col sm:flex-row gap-4'
+            >
+              <Input
+                type='email'
+                name='email' // 🔥 YEH LINE ZAROORI HAI
+                placeholder='Enter your email address'
+                className='flex-1 bg-gray-800 border-gray-700 text-white placeholder:text-gray-400'
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+
+              <Button
+                type='submit'
+                className='bg-purple-600 hover:bg-purple-700 px-8'
+              >
+                Subscribe
+              </Button>
+            </form>
+
+            {status && <p className='mt-3 text-sm text-gray-300'>{status}</p>}
           </div>
         </div>
       </div>
