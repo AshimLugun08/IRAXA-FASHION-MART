@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
+import logo from '../assets/logo-removebg-preview.png';
 
 const GOOGLE_SHEET_WEBHOOK =
   'https://script.google.com/macros/s/AKfycbya9eLvJRhnFvuvDJJUIfzQmCsdFE8ZnQZQRUTbUhVvB3U8Ic9p0g0l3cr1uM_BftmE-w/exec';
@@ -134,10 +135,11 @@ const Footer = () => {
           <div>
             <div className='mb-6'>
               <img
-                src='./src/assets/logo-removebg-preview.png'
+                src={logo}
                 alt='IRAXA FASHION MART'
-                className='w-24 h-auto mb-2'
+                className='w-40 h-auto'
               />
+
               <p className='text-gray-400 text-sm'>
                 Timeless elegance, artisanal craftsmanship, and bespoke designs.
               </p>
