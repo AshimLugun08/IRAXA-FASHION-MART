@@ -212,16 +212,40 @@ const Shop = ({ onAddToCart = async () => {} }) => {  // ✅ safe default
               </p>
 
               <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="newest">Newest</SelectItem>
-                  <SelectItem value="price-low">Price: Low to High</SelectItem>
-                  <SelectItem value="price-high">Price: High to Low</SelectItem>
-                  <SelectItem value="name">Name: A–Z</SelectItem>
-                </SelectContent>
-              </Select>
+  <SelectTrigger className="w-40 bg-white text-black border border-gray-300">
+    <SelectValue placeholder="Sort by" />
+  </SelectTrigger>
+
+  <SelectContent className="bg-white text-black">
+    <SelectItem 
+      value="newest" 
+      className="focus:bg-gray-100 data-[state=checked]:bg-gray-200"
+    >
+      Newest
+    </SelectItem>
+
+    <SelectItem 
+      value="price-low" 
+      className="focus:bg-gray-100 data-[state=checked]:bg-gray-200"
+    >
+      Price: Low to High
+    </SelectItem>
+
+    <SelectItem 
+      value="price-high" 
+      className="focus:bg-gray-100 data-[state=checked]:bg-gray-200"
+    >
+      Price: High to Low
+    </SelectItem>
+
+    <SelectItem 
+      value="name" 
+      className="focus:bg-gray-100 data-[state=checked]:bg-gray-200"
+    >
+      Name: A–Z
+    </SelectItem>
+  </SelectContent>
+</Select>
             </div>
 
             {/* PRODUCT LIST */}
