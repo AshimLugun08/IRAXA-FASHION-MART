@@ -8,10 +8,10 @@ const ProductDetails = ({ onAddToCart, onRequireAuth }) => {
   const navigate = useNavigate();
   const [product, setProduct] = useState(null);
   const [quantity, setQuantity] = useState(1);
+  const [selectedImage, setSelectedImage] = useState(null);
 
   const token = localStorage.getItem("token");
 
-  // ---------------- FETCH PRODUCT ----------------
   useEffect(() => {
     const fetchProduct = async () => {
       try {
@@ -20,6 +20,11 @@ const ProductDetails = ({ onAddToCart, onRequireAuth }) => {
         );
         const data = await res.json();
         setProduct(data);
+
+        // Set the first image as selected by default
+        const firstImage =
+          data.images?.[0]?.url || data.images?.[0] || data.image || null;
+        setSelectedImage(firstImage);
       } catch (err) {
         console.error("Error fetching product:", err);
       }
@@ -27,7 +32,6 @@ const ProductDetails = ({ onAddToCart, onRequireAuth }) => {
     fetchProduct();
   }, [id]);
 
-  // ---------------- LOADING ----------------
   if (!product) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -36,7 +40,12 @@ const ProductDetails = ({ onAddToCart, onRequireAuth }) => {
     );
   }
 
-  // ---------------- ADD TO CART ----------------
+  // Normalize images array to always be an array of URL strings
+  const images = (product.images || []).map((img) =>
+    typeof img === "string" ? img : img.url
+  );
+  if (!images.length && product.image) images.push(product.image);
+
   const handleAddToCart = async () => {
     if (!token) {
       alert("Please log in or sign up to continue.");
@@ -57,13 +66,7 @@ const ProductDetails = ({ onAddToCart, onRequireAuth }) => {
           priceAtTimeOfAddition: product.price,
           size: "M",
           color: "Red",
-
-          // 🔥 FIXED: Always send a VALID URL string
-          image:
-            product.image ||
-            product.images?.[0]?.url ||
-            product.images?.[0] ||
-            "",
+          image: images[0] || "",
         }),
       });
 
@@ -75,10 +78,7 @@ const ProductDetails = ({ onAddToCart, onRequireAuth }) => {
       }
 
       alert("✅ Added to cart!");
-
-      // notify App.js to refresh cart immediately
       window.dispatchEvent(new Event("cartUpdated"));
-
       navigate("/cart");
     } catch (err) {
       console.error("Add to cart error:", err);
@@ -88,39 +88,59 @@ const ProductDetails = ({ onAddToCart, onRequireAuth }) => {
 
   return (
     <div className="container mx-auto p-8 flex flex-col md:flex-row gap-8">
-      {/* Product Image */}
-      <div className="w-full md:w-1/3">
-        <img
-          src={
-            product.images?.[0]?.url ||
-            product.images?.[0] ||
-            product.image ||
-            "/placeholder.png"
-          }
-          alt={product.name}
-          className="w-full h-auto rounded-lg object-cover"
-        />
+
+      {/* ── LEFT: Image Gallery ── */}
+      <div className="w-full md:w-1/2 flex flex-col gap-3">
+
+        {/* Main Image */}
+        <div className="w-full aspect-square rounded-lg overflow-hidden border border-gray-200">
+          <img
+            src={selectedImage || "/placeholder.png"}
+            alt={product.name}
+            className="w-full h-full object-cover transition-all duration-300"
+          />
+        </div>
+
+        {/* Thumbnails — only render if more than 1 image */}
+        {images.length > 1 && (
+          <div className="flex gap-2 flex-wrap">
+            {images.map((url, index) => (
+              <button
+                key={index}
+                onClick={() => setSelectedImage(url)}
+                className={`w-20 h-20 rounded-md overflow-hidden border-2 transition-all duration-200 ${selectedImage === url
+                    ? "border-purple-600 opacity-100"
+                    : "border-transparent opacity-60 hover:opacity-90"
+                  }`}
+              >
+                <img
+                  src={url}
+                  alt={`${product.name} view ${index + 1}`}
+                  className="w-full h-full object-cover"
+                />
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Product Details */}
+      {/* ── RIGHT: Product Details ── */}
       <div className="flex-1">
         <h1 className="text-3xl font-semibold mb-4">{product.name}</h1>
         <p className="text-gray-600 mb-2">{product.description}</p>
-        <p className="text-xl font-bold mb-4">
+        <p className="text-xl font-bold mb-6">
           ₹{product.price?.toLocaleString()}
         </p>
 
         {/* Quantity Selector */}
-        <div className="flex items-center gap-4 mb-4">
+        <div className="flex items-center gap-4 mb-6">
           <button
             onClick={() => setQuantity(Math.max(1, quantity - 1))}
             className="px-3 py-1 border rounded"
           >
             -
           </button>
-
           <span className="text-lg">{quantity}</span>
-
           <button
             onClick={() => setQuantity(quantity + 1)}
             className="px-3 py-1 border rounded"
@@ -129,7 +149,7 @@ const ProductDetails = ({ onAddToCart, onRequireAuth }) => {
           </button>
         </div>
 
-        {/* Add to Cart Button */}
+        {/* Add to Cart */}
         <Button
           onClick={handleAddToCart}
           className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded"
